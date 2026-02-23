@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0f19" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <title>Gym Log</title>
+  <style>
+    :root{
+      --bg:#0b0f19; --panel:#121a2a; --panel2:#0f1626;
+      --text:#e8eefc; --muted:#9fb0d0; --accent:#6ee7ff;
+      --good:#34d399; --warn:#fbbf24; --bad:#fb7185;
+      --border:rgba(255,255,255,.08);
+      --shadow: 0 8px 30px rgba(0,0,0,.35);
+      --r:16px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+    body{ margin:0; background:radial-gradient(1200px 700px at 20% 0%, #1b2a4a 0%, var(--bg) 55%); color:var(--text);}
+    a{ color:inherit; }
+    .wrap{ max-width:1100px; margin:0 auto; padding:18px; }
+    .topbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .logo{
+      width:38px;height:38px;border-radius:12px;
+      background:linear-gradient(135deg, rgba(110,231,255,.25), rgba(110,231,255,.05));
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      display:grid; place-items:center;
+      font-weight:800; letter-spacing:.5px;
+    }
+    .title h1{ margin:0; font-size:18px; }
+    .title p{ margin:2px 0 0; color:var(--muted); font-size:12px; }
+
+    .grid{ display:grid; grid-template-columns: 1.2fr .8fr; gap:14px; margin-top:14px; }
+    @media (max-width: 920px){ .grid{ grid-template-columns:1fr; } }
+
+    .card{
+      background:linear-gradient(180deg, rgba(18,26,42,.92), rgba(15,22,38,.92));
+      border:1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-bottom:1px solid var(--border);
+      background:rgba(255,255,255,.02);
+    }
+    .card .hd h2{ margin:0; font-size:14px; }
+    .card .hd .sub{ color:var(--muted); font-size:12px; margin-top:2px; }
+    .card .bd{ padding:14px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .row > *{ flex: 1 1 auto; }
+
+    input, select, textarea{
+      width:100%;
+      box-sizing:border-box;
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      outline:none;
+    }
+    textarea{ min-height:70px; resize:vertical; }
+    input::placeholder, textarea::placeholder{ color:rgba(159,176,208,.7); }
+
+    .btn{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(110,231,255,.10);
+      color:var(--text);
+      cursor:pointer;
+      font-weight:650;
+      transition: transform .06s ease, background .2s ease;
+      user-select:none;
+    }
+    .btn:hover{ background:rgba(110,231,255,.16); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.secondary{ background:rgba(255,255,255,.06); }
+    .btn.danger{ background:rgba(251,113,133,.12); }
+    .btn.good{ background:rgba(52,211,153,.12); }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .list{ display:flex; flex-direction:column; gap:10px; }
+    .item{
+      border:1px solid var(--border);
+      border-radius:14px;
+      overflow:hidden;
+      background:rgba(0,0,0,.12);
+    }
+    .item .it-hd{
+      padding:10px 12px;
+      display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      background:rgba(255,255,255,.03);
+      border-bottom:1px solid var(--border);
+    }
+    .item .it-hd b{ font-size:13px; }
+    .item .it-bd{ padding:12px; display:flex; flex-direction:column; gap:10px; }
+
+    .sets{ width:100%; border-collapse:separate; border-spacing:0 8px; }
+    .sets th{
+      text-align:left; font-size:11px; color:var(--muted);
+      font-weight:650; padding:0 8px 4px;
+    }
+    .setrow td{ padding:0 6px; }
+    .setrow .mini{ padding:9px 10px; border-radius:12px; }
+    .setrow .mini.center{ text-align:center; }
+
+    .muted{ color:var(--muted); font-size:12px; }
+    .small{ font-size:12px; }
+    .split{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .kpi{ display:flex; gap:10px; flex-wrap:wrap; }
+    .kpi .box{
+      flex:1 1 140px;
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+      background:rgba(255,255,255,.03);
+    }
+    .kpi .box .label{ color:var(--muted); font-size:11px; }
+    .kpi .box .value{ font-size:16px; font-weight:800; margin-top:3px; }
+
+    .toast{
+      position:fixed; left:50%; bottom:14px; transform:translateX(-50%);
+      background:rgba(10,14,24,.92);
+      border:1px solid var(--border);
+      padding:10px 12px; border-radius:14px;
+      box-shadow: var(--shadow);
+      color:var(--text);
+      display:none;
+      max-width:min(560px, calc(100vw - 24px));
+    }
+
+    .tabs{ display:flex; gap:8px; flex-wrap:wrap; }
+    .tab{ padding:8px 10px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,.03); cursor:pointer; font-size:12px; color:var(--muted); }
+    .tab.active{ background:rgba(110,231,255,.12); color:var(--text); }
+
+    .timer{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      border:1px solid var(--border); border-radius:14px; padding:10px 12px;
+      background:rgba(255,255,255,.03);
+    }
+    .timer .t{ font-size:18px; font-weight:900; letter-spacing:.8px; }
+    .right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+    .hint{ color:var(--muted); font-size:12px; line-height:1.35; }
+    .hr{ height:1px; background:var(--border); margin:12px 0; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+    }
+  </script>
+
+  <!-- React via CDN (no build step needed) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <script>
+    const { useEffect, useMemo, useRef, useState } = React;
+
+    // ---- Utilities ----
+    const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const fmtDate = (iso) => {
+      const d = new Date(iso + "T00:00:00");
+      return d.toLocaleDateString(undefined, { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+    };
+    const e1rm = (w, r) => {
+      const reps = Number(r);
+      const wt = Number(w);
+      if (!isFinite(reps) || !isFinite(wt) || reps <= 0 || wt <= 0) return 0;
+      // Epley
+      return wt * (1 + reps/30);
+    };
+    const round1 = (n) => Math.round(n*10)/10;
+
+    const STORAGE_KEY = "gym_log_pwa_v1";
+
+    function loadDB(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return null;
+        return JSON.parse(raw);
+      }catch{ return null; }
+    }
+    function saveDB(db){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    }
+
+    const defaultDB = () => ({
+      settings: { unit: "kg" },
+      templates: [],
+      sessions: [],
+      lastUsedExercises: ["Back Squat","Bench Press","RDL","Pull Up","Hip Thrust","Seated Row","Split Squat"],
+    });
+
+    function toast(msg){
+      const el = document.getElementById("toast");
+      if(!el) return;
+      el.textContent = msg;
+      el.style.display = "block";
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(()=> el.style.display="none", 2200);
+    }
+
+    // ---- App ----
+    function App(){
+      const [db, setDB] = useState(() => loadDB() ?? defaultDB());
+      const [tab, setTab] = useState("log"); // log | history | templates | insights | backup
+      const [active, setActive] = useState(() => makeNewSession());
+      const [query, setQuery] = useState("");
+
+      // Timer
+      const [secondsLeft, setSecondsLeft] = useState(0);
+      const timerRef = useRef(null);
+
+      useEffect(() => saveDB(db), [db]);
+
+      useEffect(() => {
+        if(secondsLeft <= 0){
+          if(timerRef.current){ clearInterval(timerRef.current); timerRef.current=null; }
+          return;
+        }
+        if(timerRef.current) return;
+        timerRef.current = setInterval(() => {
+          setSecondsLeft(s => {
+            if(s <= 1){
+              clearInterval(timerRef.current); timerRef.current=null;
+              toast("Rest done ✅");
+              return 0;
+            }
+            return s - 1;
+          });
+        }, 1000);
+      }, [secondsLeft]);
+
+      function makeNewSession(fromTemplate){
+        const base = fromTemplate ? {
+          title: fromTemplate.title,
+          notes: "",
+          exercises: fromTemplate.exercises.map(ex => ({
+            id: uid(),
+            name: ex.name,
+            notes: "",
+            sets: ex.sets.map(s => ({ id: uid(), weight: s.weight ?? "", reps: s.reps ?? "", rpe: s.rpe ?? "" })),
+          })),
+        } : {
+          title: "Workout",
+          notes: "",
+          exercises: [],
+        };
+        return {
+          id: uid(),
+          date: todayISO(),
+          ...base
+        };
+      }
+
+      function addExercise(name){
+        const clean = (name ?? "").trim();
+        if(!clean) return;
+        setActive(prev => ({
+          ...prev,
+          exercises: [
+            ...prev.exercises,
+            { id: uid(), name: clean, notes:"", sets:[{ id: uid(), weight:"", reps:"", rpe:"" }] }
+          ]
+        }));
+        setDB(prev => ({
+          ...prev,
+          lastUsedExercises: [clean, ...prev.lastUsedExercises.filter(x => x!==clean)].slice(0, 20),
+        }));
+      }
+
+      function removeExercise(exId){
+        setActive(prev => ({ ...prev, exercises: prev.exercises.filter(e => e.id !== exId) }));
+      }
+
+      function updateExercise(exId, patch){
+        setActive(prev => ({
+          ...prev,
+          exercises: prev.exercises.map(e => e.id===exId ? { ...e, ...patch } : e)
+        }));
+      }
+
+      function addSet(exId){
+        setActive(prev => ({
+          ...prev,
+          exercises: prev.exercises.map(e => e.id===exId ? {
+            ...e,
+            sets: [...e.sets, { id: uid(), weight:"", reps:"", rpe:"" }]
+          } : e)
+        }));
+      }
+
+      function removeSet(exId, setId){
+        setActive(prev => ({
+          ...prev,
+          exercises: prev.exercises.map(e => e.id===exId ? {
+            ...e,
+            sets: e.sets.filter(s => s.id !== setId)
+          } : e)
+        }));
+      }
+
+      function updateSet(exId, setId, patch){
+        setActive(prev => ({
+          ...prev,
+          exercises: prev.exercises.map(e => e.id===exId ? {
+            ...e,
+            sets: e.sets.map(s => s.id===setId ? { ...s, ...patch } : s)
+          } : e)
+        }));
+      }
+
+      function startRest(sec){
+        const v = Number(sec);
+        if(!isFinite(v) || v<=0) return;
+        setSecondsLeft(v);
+        toast(`Rest: ${v}s`);
+      }
+
+      function saveSession(){
+        // basic validation: at least 1 exercise or notes
+        if(active.exercises.length === 0 && !active.notes.trim()){
+          toast("Add an exercise (or notes) first");
+          return;
+        }
+        setDB(prev => ({
+          ...prev,
+          sessions: [active, ...prev.sessions].sort((a,b)=> (b.date+a.id).localeCompare(a.date+b.id)),
+        }));
+        toast("Saved workout ✅");
+        setActive(makeNewSession());
+        setTab("history");
+      }
+
+      function saveAsTemplate(){
+        if(active.exercises.length === 0){
+          toast("Add exercises before saving a template");
+          return;
+        }
+        const t = {
+          id: uid(),
+          title: active.title.trim() || "Template",
+          exercises: active.exercises.map(ex => ({
+            name: ex.name,
+            sets: ex.sets.map(s => ({ weight: s.weight ?? "", reps: s.reps ?? "", rpe: s.rpe ?? "" }))
+          })),
+          created: new Date().toISOString()
+        };
+        setDB(prev => ({ ...prev, templates: [t, ...prev.templates] }));
+        toast("Saved as template ⭐");
+      }
+
+      function loadTemplate(t){
+        setActive(makeNewSession(t));
+        setTab("log");
+        toast("Template loaded");
+      }
+
+      function deleteTemplate(id){
+        setDB(prev => ({ ...prev, templates: prev.templates.filter(t => t.id !== id) }));
+        toast("Template deleted");
+      }
+
+      function deleteSession(id){
+        setDB(prev => ({ ...prev, sessions: prev.sessions.filter(s => s.id !== id) }));
+        toast("Workout deleted");
+      }
+
+      const filteredHistory = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if(!q) return db.sessions;
+        return db.sessions.filter(s => {
+          const hay = [
+            s.title, s.date, s.notes,
+            ...s.exercises.map(e => e.name + " " + (e.notes||""))
+          ].join(" ").toLowerCase();
+          return hay.includes(q);
+        });
+      }, [db.sessions, query]);
+
+      const insights = useMemo(() => {
+        // PRs (best e1RM by exercise)
+        const best = new Map();
+        let totalSets = 0, totalExercises = 0;
+
+        for(const s of db.sessions){
+          totalExercises += s.exercises.length;
+          for(const ex of s.exercises){
+            for(const st of ex.sets){
+              totalSets++;
+              const val = e1rm(st.weight, st.reps);
+              if(val > 0){
+                const cur = best.get(ex.name) ?? 0;
+                if(val > cur) best.set(ex.name, val);
+              }
+            }
+          }
+        }
+        const prs = [...best.entries()]
+          .sort((a,b)=> b[1]-a[1])
+          .slice(0, 12)
+          .map(([name, val]) => ({ name, val: round1(val) }));
+
+        const last7 = (() => {
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 7);
+          return db.sessions.filter(s => new Date(s.date+"T00:00:00") >= cutoff).length;
+        })();
+
+        return {
+          prs,
+          totalWorkouts: db.sessions.length,
+          totalExercises,
+          totalSets,
+          last7
+        };
+      }, [db.sessions]);
+
+      // Backup
+      const exportJSON = () => {
+        const blob = new Blob([JSON.stringify(db, null, 2)], { type:"application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `gym-log-backup-${todayISO()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast("Exported backup");
+      };
+
+      const importJSON = (file) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try{
+            const parsed = JSON.parse(String(reader.result || "{}"));
+            if(!parsed || typeof parsed !== "object" || !Array.isArray(parsed.sessions)) throw new Error("bad");
+            setDB(parsed);
+            toast("Imported backup ✅");
+            setTab("history");
+          }catch{
+            toast("Import failed (not a valid backup)");
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      const timeStr = useMemo(() => {
+        const s = secondsLeft;
+        const mm = String(Math.floor(s/60)).padStart(2,'0');
+        const ss = String(s%60).padStart(2,'0');
+        return `${mm}:${ss}`;
+      }, [secondsLeft]);
+
+      return (
+        React.createElement("div", { className:"wrap" },
+          React.createElement("div", { className:"topbar" },
+            React.createElement("div", { className:"brand" },
+              React.createElement("div", { className:"logo" }, "GL"),
+              React.createElement("div", { className:"title" },
+                React.createElement("h1", null, "Gym Log"),
+                React.createElement("p", null, "Fast workout logging • Offline • Export/Import")
+              )
+            ),
+            React.createElement("div", { className:"right" },
+              React.createElement("span", { className:"pill" }, `Unit: ${db.settings.unit}`),
+              React.createElement("button", { className:"btn secondary", onClick: () => {
+                setDB(prev => ({ ...prev, settings: { ...prev.settings, unit: prev.settings.unit==="kg" ? "lb" : "kg" } }));
+                toast("Unit updated");
+              } }, "Toggle kg/lb")
+            )
+          ),
+
+          React.createElement("div", { className:"grid" },
+            // Left column
+            React.createElement("div", { className:"card" },
+              React.createElement("div", { className:"hd" },
+                React.createElement("div", null,
+                  React.createElement("h2", null, "Navigation"),
+                  React.createElement("div", { className:"sub" }, "Log • History • Templates • Insights • Backup")
+                ),
+                React.createElement("div", { className:"tabs" },
+                  ["log","history","templates","insights","backup"].map(t =>
+                    React.createElement("div", {
+                      key:t,
+                      className:"tab" + (tab===t ? " active":""),
+                      onClick: () => setTab(t)
+                    }, t[0].toUpperCase() + t.slice(1))
+                  )
+                )
+              ),
+
+              React.createElement("div", { className:"bd" },
+                tab==="log" && React.createElement(LogTab, {
+                  db, active, setActive,
+                  addExercise, removeExercise, updateExercise,
+                  addSet, removeSet, updateSet,
+                  saveSession, saveAsTemplate,
+                  startRest, secondsLeft, timeStr, makeNewSession,
+                }),
+                tab==="history" && React.createElement(HistoryTab, {
+                  sessions: filteredHistory, query, setQuery, deleteSession
+                }),
+                tab==="templates" && React.createElement(TemplatesTab, {
+                  templates: db.templates, loadTemplate, deleteTemplate
+                }),
+                tab==="insights" && React.createElement(InsightsTab, { insights }),
+                tab==="backup" && React.createElement(BackupTab, { exportJSON, importJSON })
+              )
+            ),
+
+            // Right column
+            React.createElement("div", { className:"card" },
+              React.createElement("div", { className:"hd" },
+                React.createElement("div", null,
+                  React.createElement("h2", null, "Quick Add"),
+                  React.createElement("div", { className:"sub" }, "Tap to add an exercise")
+                ),
+                React.createElement("span", { className:"pill" }, `${db.lastUsedExercises.length} recent`)
+              ),
+              React.createElement("div", { className:"bd" },
+                React.createElement("div", { className:"list" },
+                  db.lastUsedExercises.slice(0, 12).map(name =>
+                    React.createElement("button", { key:name, className:"btn secondary", onClick:()=> addExercise(name) }, name)
+                  )
+                ),
+                React.createElement("div", { className:"hr" }),
+                React.createElement("div", { className:"hint" },
+                  React.createElement("b", null, "Tip: "),
+                  "Export a backup after a few sessions, then import it on your phone so your data matches across devices."
+                )
+              )
+            )
+          )
+        )
+      );
+    }
+
+    function LogTab(props){
+      const {
+        active, setActive,
+        addExercise, removeExercise, updateExercise,
+        addSet, removeSet, updateSet,
+        saveSession, saveAsTemplate,
+        startRest, secondsLeft, timeStr, makeNewSession,
+      } = props;
+
+      const [newEx, setNewEx] = useState("");
+
+      const volume = useMemo(() => {
+        let v = 0;
+        for(const ex of active.exercises){
+          for(const s of ex.sets){
+            const w = Number(s.weight), r = Number(s.reps);
+            if(isFinite(w) && isFinite(r)) v += w*r;
+          }
+        }
+        return Math.round(v);
+      }, [active]);
+
+      return (
+        React.createElement(React.Fragment, null,
+          React.createElement("div", { className:"split" },
+            React.createElement("div", { style:{minWidth:240, flex:"1 1 320px"} },
+              React.createElement("div", { className:"row" },
+                React.createElement("div", null,
+                  React.createElement("div", { className:"muted" }, "Date"),
+                  React.createElement("input", {
+                    value: active.date,
+                    onChange: e => setActive(prev => ({ ...prev, date: e.target.value }))
+                  })
+                ),
+                React.createElement("div", null,
+                  React.createElement("div", { className:"muted" }, "Workout title"),
+                  React.createElement("input", {
+                    value: active.title,
+                    placeholder:"e.g. Lower Strength",
+                    onChange: e => setActive(prev => ({ ...prev, title: e.target.value }))
+                  })
+                )
+              )
+            ),
+            React.createElement("div", { style:{minWidth:240, flex:"1 1 260px"} },
+              React.createElement("div", { className:"timer" },
+                React.createElement("div", null,
+                  React.createElement("div", { className:"muted" }, "Rest timer"),
+                  React.createElement("div", { className:"t" }, secondsLeft ? timeStr : "— — : — —")
+                ),
+                React.createElement("div", { className:"right" },
+                  React.createElement("button", { className:"btn secondary", onClick:()=> startRest(60) }, "60s"),
+                  React.createElement("button", { className:"btn secondary", onClick:()=> startRest(90) }, "90s"),
+                  React.createElement("button", { className:"btn secondary", onClick:()=> startRest(120) }, "120s"),
+                  React.createElement("button", { className:"btn danger", onClick:()=> startRest(0) }, "Stop")
+                )
+              )
+            )
+          ),
+
+          React.createElement("div", { className:"hr" }),
+
+          React.createElement("div", { className:"row" },
+            React.createElement("div", { style:{flex:"2 1 260px"} },
+              React.createElement("div", { className:"muted" }, "Add exercise"),
+              React.createElement("input", {
+                value:newEx,
+                placeholder:"Type an exercise name (e.g. Bench Press)",
+                onChange:e=>setNewEx(e.target.value),
+                onKeyDown:e=>{
+                  if(e.key==="Enter"){ addExercise(newEx); setNewEx(""); }
+                }
+              })
+            ),
+            React.createElement("div", { style:{flex:"0 0 auto"} },
+              React.createElement("div", { className:"muted" }, " "),
+              React.createElement("button", { className:"btn", onClick:()=>{ addExercise(newEx); setNewEx(""); } }, "Add")
+            ),
+            React.createElement("div", { style:{flex:"0 0 auto"} },
+              React.createElement("div", { className:"muted" }, " "),
+              React.createElement("button", { className:"btn secondary", onClick:()=>{ setActive(makeNewSession()); } }, "New workout")
+            )
+          ),
+
+          React.createElement("div", { className:"hr" }),
+
+          React.createElement("div", { className:"muted" }, `Estimated session volume (Σ weight×reps): ${volume}`),
+          React.createElement("div", { style:{height:10} }),
+
+          active.exercises.length===0
+            ? React.createElement("div", { className:"hint" }, "No exercises yet. Add one above, or tap a recent exercise on the right.")
+            : React.createElement("div", { className:"list" },
+                active.exercises.map((ex) =>
+                  React.createElement("div", { key:ex.id, className:"item" },
+                    React.createElement("div", { className:"it-hd" },
+                      React.createElement("div", null,
+                        React.createElement("b", null, ex.name),
+                        React.createElement("div", { className:"muted" }, `${ex.sets.length} set(s)`)
+                      ),
+                      React.createElement("div", { className:"right" },
+                        React.createElement("button", { className:"btn secondary", onClick:()=> addSet(ex.id) }, "+ Set"),
+                        React.createElement("button", { className:"btn danger", onClick:()=> removeExercise(ex.id) }, "Remove")
+                      )
+                    ),
+                    React.createElement("div", { className:"it-bd" },
+                      React.createElement("div", null,
+                        React.createElement("div", { className:"muted" }, "Exercise notes"),
+                        React.createElement("input", {
+                          value: ex.notes || "",
+                          placeholder:"Cues, tempo, pain, etc.",
+                          onChange: e => updateExercise(ex.id, { notes: e.target.value })
+                        })
+                      ),
+                      React.createElement("table", { className:"sets" },
+                        React.createElement("thead", null,
+                          React.createElement("tr", null,
+                            React.createElement("th", null, "Set"),
+                            React.createElement("th", null, "Weight"),
+                            React.createElement("th", null, "Reps"),
+                            React.createElement("th", null, "RPE"),
+                            React.createElement("th", null, "1RM est"),
+                            React.createElement("th", null, "")
+                          )
+                        ),
+                        React.createElement("tbody", null,
+                          ex.sets.map((s, idx) =>
+                            React.createElement("tr", { key:s.id, className:"setrow" },
+                              React.createElement("td", null,
+                                React.createElement("div", { className:"mini center", style:{border:"1px solid var(--border)", background:"rgba(255,255,255,.03)"} }, idx+1)
+                              ),
+                              React.createElement("td", null,
+                                React.createElement("input", {
+                                  className:"mini",
+                                  value: s.weight,
+                                  inputMode:"decimal",
+                                  placeholder:"e.g. 80",
+                                  onChange:e=> updateSet(ex.id, s.id, { weight: e.target.value })
+                                })
+                              ),
+                              React.createElement("td", null,
+                                React.createElement("input", {
+                                  className:"mini",
+                                  value: s.reps,
+                                  inputMode:"numeric",
+                                  placeholder:"e.g. 5",
+                                  onChange:e=> updateSet(ex.id, s.id, { reps: e.target.value })
+                                })
+                              ),
+                              React.createElement("td", null,
+                                React.createElement("input", {
+                                  className:"mini",
+                                  value: s.rpe,
+                                  inputMode:"decimal",
+                                  placeholder:"e.g. 8",
+                                  onChange:e=> updateSet(ex.id, s.id, { rpe: e.target.value })
+                                })
+                              ),
+                              React.createElement("td", null,
+                                React.createElement("div", { className:"mini center", style:{border:"1px solid var(--border)", background:"rgba(255,255,255,.02)"} },
+                                  (() => {
+                                    const val = e1rm(s.weight, s.reps);
+                                    return val ? round1(val) : "—";
+                                  })()
+                                )
+                              ),
+                              React.createElement("td", null,
+                                React.createElement("button", { className:"btn secondary", onClick:()=> startRest(90) }, "Rest"),
+                                " ",
+                                React.createElement("button", { className:"btn danger", onClick:()=> removeSet(ex.id, s.id) }, "×")
+                              )
+                            )
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              ),
+
+          React.createElement("div", { className:"hr" }),
+          React.createElement("div", null,
+            React.createElement("div", { className:"muted" }, "Workout notes"),
+            React.createElement("textarea", {
+              value: active.notes,
+              placeholder:"How it felt, what to change next time, soreness, etc.",
+              onChange: e => setActive(prev => ({ ...prev, notes: e.target.value }))
+            })
+          ),
+          React.createElement("div", { style:{height:12} }),
+          React.createElement("div", { className:"row" },
+            React.createElement("button", { className:"btn good", onClick: saveSession }, "Save workout"),
+            React.createElement("button", { className:"btn", onClick: saveAsTemplate }, "Save as template"),
+          )
+        )
+      );
+    }
+
+    function HistoryTab({ sessions, query, setQuery, deleteSession }){
+      return (
+        React.createElement(React.Fragment, null,
+          React.createElement("div", { className:"row" },
+            React.createElement("div", null,
+              React.createElement("div", { className:"muted" }, "Search"),
+              React.createElement("input", {
+                value: query,
+                placeholder:"Search date, workout name, exercise, notes…",
+                onChange: e => setQuery(e.target.value)
+              })
+            )
+          ),
+          React.createElement("div", { style:{height:10} }),
+          sessions.length===0
+            ? React.createElement("div", { className:"hint" }, "No workouts yet. Go to Log and save your first session.")
+            : React.createElement("div", { className:"list" },
+                sessions.map(s =>
+                  React.createElement("div", { key:s.id, className:"item" },
+                    React.createElement("div", { className:"it-hd" },
+                      React.createElement("div", null,
+                        React.createElement("b", null, `${s.title} • ${fmtDate(s.date)}`),
+                        React.createElement("div", { className:"muted" },
+                          `${s.exercises.length} exercise(s)` + (s.notes?.trim() ? " • has notes" : "")
+                        )
+                      ),
+                      React.createElement("div", { className:"right" },
+                        React.createElement("button", { className:"btn danger", onClick:()=> deleteSession(s.id) }, "Delete")
+                      )
+                    ),
+                    React.createElement("div", { className:"it-bd" },
+                      s.notes?.trim() ? React.createElement("div", { className:"small" }, s.notes) : null,
+                      React.createElement("div", { className:"muted" }, "Exercises"),
+                      React.createElement("div", { className:"small" },
+                        s.exercises.map(e => `${e.name} (${e.sets.length})`).join(" • ")
+                      )
+                    )
+                  )
+                )
+              )
+        )
+      );
+    }
+
+    function TemplatesTab({ templates, loadTemplate, deleteTemplate }){
+      return (
+        React.createElement(React.Fragment, null,
+          templates.length===0
+            ? React.createElement("div", { className:"hint" }, "No templates yet. Build a workout in Log and press “Save as template”.")
+            : React.createElement("div", { className:"list" },
+                templates.map(t =>
+                  React.createElement("div", { key:t.id, className:"item" },
+                    React.createElement("div", { className:"it-hd" },
+                      React.createElement("div", null,
+                        React.createElement("b", null, t.title),
+                        React.createElement("div", { className:"muted" }, `${t.exercises.length} exercise(s)`)
+                      ),
+                      React.createElement("div", { className:"right" },
+                        React.createElement("button", { className:"btn", onClick:()=> loadTemplate(t) }, "Use"),
+                        React.createElement("button", { className:"btn danger", onClick:()=> deleteTemplate(t.id) }, "Delete")
+                      )
+                    ),
+                    React.createElement("div", { className:"it-bd" },
+                      React.createElement("div", { className:"small" },
+                        t.exercises.map(e => `${e.name} (${e.sets.length})`).join(" • ")
+                      )
+                    )
+                  )
+                )
+              )
+        )
+      );
+    }
+
+    function InsightsTab({ insights }){
+      return (
+        React.createElement(React.Fragment, null,
+          React.createElement("div", { className:"kpi" },
+            React.createElement("div", { className:"box" },
+              React.createElement("div", { className:"label" }, "Total workouts"),
+              React.createElement("div", { className:"value" }, insights.totalWorkouts)
+            ),
+            React.createElement("div", { className:"box" },
+              React.createElement("div", { className:"label" }, "Workouts (last 7 days)"),
+              React.createElement("div", { className:"value" }, insights.last7)
+            ),
+            React.createElement("div", { className:"box" },
+              React.createElement("div", { className:"label" }, "Total exercises logged"),
+              React.createElement("div", { className:"value" }, insights.totalExercises)
+            ),
+            React.createElement("div", { className:"box" },
+              React.createElement("div", { className:"label" }, "Total sets logged"),
+              React.createElement("div", { className:"value" }, insights.totalSets)
+            )
+          ),
+          React.createElement("div", { className:"hr" }),
+          React.createElement("h3", { style:{margin:"0 0 8px", fontSize:14} }, "Top PRs (estimated 1RM)"),
+          insights.prs.length===0
+            ? React.createElement("div", { className:"hint" }, "No PRs yet. Log a few weighted sets (weight + reps).")
+            : React.createElement("div", { className:"list" },
+                insights.prs.map(p =>
+                  React.createElement("div", { key:p.name, className:"item" },
+                    React.createElement("div", { className:"it-hd" },
+                      React.createElement("b", null, p.name),
+                      React.createElement("span", { className:"pill" }, `${p.val}`)
+                    )
+                  )
+                )
+              ),
+          React.createElement("div", { className:"hr" }),
+          React.createElement("div", { className:"hint" },
+            React.createElement("b", null, "Note: "),
+            "Estimated 1RM uses the Epley formula. For sprint-focused lifting, treat it as a trend, not gospel."
+          )
+        )
+      );
+    }
+
+    function BackupTab({ exportJSON, importJSON }){
+      return (
+        React.createElement(React.Fragment, null,
+          React.createElement("div", { className:"hint" },
+            React.createElement("b", null, "Best workflow: "),
+            "Export a backup on your Mac → AirDrop it to your phone → Import it there."
+          ),
+          React.createElement("div", { style:{height:10} }),
+          React.createElement("div", { className:"row" },
+            React.createElement("button", { className:"btn", onClick: exportJSON }, "Export backup (.json)"),
+            React.createElement("label", { className:"btn secondary", style:{display:"inline-flex", alignItems:"center", justifyContent:"center"} },
+              "Import backup",
+              React.createElement("input", {
+                type:"file",
+                accept:"application/json",
+                style:{display:"none"},
+                onChange: e => {
+                  const f = e.target.files && e.target.files[0];
+                  if(f) importJSON(f);
+                  e.target.value = "";
+                }
+              })
+            )
+          ),
+          React.createElement("div", { className:"hr" }),
+          React.createElement("div", { className:"hint" },
+            "If you want true syncing across devices automatically, you’d add a login + database (Firebase/Supabase). This version stays private and offline-first."
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("app")).render(React.createElement(App));
+  </script>
+</body>
+</html>
